@@ -43,4 +43,14 @@ class News extends Model
     {
         return $this->hasMany(Comment::class)->whereNull('parent_id'); // Hanya komentar utama
     }
+
+    public function bookmarks()
+    {
+        return $this->hasMany(Bookmark::class);
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
 }

@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\InteractionController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\CommentModerationController;
@@ -29,6 +31,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    // User Profile & Data
+    Route::get('/user', [UserController::class, 'show']);
+    Route::post('/user/profile', [UserController::class, 'updateProfile']);
+    Route::post('/user/password', [UserController::class, 'updatePassword']);
+    Route::get('/user/notifications', [UserController::class, 'getNotifications']);
+    Route::patch('/user/notifications/{notificationId}', [UserController::class, 'markNotificationAsRead']);
+    Route::get('/user/bookmarks', [UserController::class, 'getBookmarks']);
+
+    // Interactions
+    Route::post('/news/{news}/vote', [InteractionController::class, 'handleVote']);
+    Route::post('/news/{news}/bookmark', [InteractionController::class, 'toggleBookmark']);
 
     // Menambah komentar pada berita
     Route::post('/news/{news:slug}/comments', [CommentController::class, 'store']);

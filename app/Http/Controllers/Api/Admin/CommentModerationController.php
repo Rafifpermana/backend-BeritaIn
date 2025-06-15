@@ -27,19 +27,28 @@ class CommentModerationController extends Controller
     // Memperbarui status komentar (approve/reject)
     public function update(Request $request, Comment $comment)
     {
-        $request->validate(['status' => 'required|in:approved,rejected']);
+        $request->validate([
+            'status' => 'required|in:approved,rejected',
+            // Tambahkan validasi untuk poin, boleh kosong (nullable)
+            'points_to_deduct' => 'nullable|integer|min:0'
+        ]);
 
         $comment->status = $request->status;
         $comment->save();
 
-        // Kurangi poin jika komentar ditolak
+        // Kurangi poin jika komentar ditolak, gunakan nilai dari request
         if ($request->status === 'rejected') {
+            // Ambil nilai dari request, jika tidak ada, defaultnya 15
+            $pointsToDeduct = $request->input('points_to_deduct', 15);
+
             $user = $comment->user;
-            $user->points = max(0, $user->points - 15); // Kurangi 15 poin
-            $user->save();
+            if ($user) {
+                $user->points = max(0, $user->points - $pointsToDeduct);
+                $user->save();
+            }
         }
 
-        return response()->json(['message' => 'Comment status updated successfully.', 'comment' => $comment]);
+        return response()->json(['message' => 'Comment status updated successfully.', 'comment' => $comment->load('user')]);
     }
 
     // Menghapus komentar secara permanen
