@@ -11,19 +11,33 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            'Tech & Innovation',
-            'Business & Economy',
-            'Entertainment & Pop Culture',
-            'Health & Wellness',
-            'Sports',
-            'Gaming',
+            "all",
+            "bisnis",
+            "bola",
+            "dunia",
+            "ekonomi",
+            "entertainment",
+            "gaya-hidup",
+            "hiburan",
+            "hukum",
+            "internasional",
+            "investment",
+            "lifestyle",
+            "market",
+            "nasional",
+            "news",
+            "olahraga",
+            "politik",
+            "tech",
+            "tekno",
+            "teknologi"
         ];
 
         foreach ($categories as $category) {
-            Category::create([
-                'name' => $category,
-                'slug' => Str::slug($category),
-            ]);
+            Category::firstOrCreate(
+                ['slug' => Str::slug($category)],
+                ['name' => ucwords(str_replace('-', ' ', $category))]
+            );
         }
     }
 }

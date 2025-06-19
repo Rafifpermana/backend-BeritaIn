@@ -5,25 +5,38 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\NewsController;
-use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\InteractionController;
+use App\Http\Controllers\Api\ArticleInteractionController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\CommentModerationController;
 use App\Http\Controllers\Api\Admin\BroadcastController;
+use App\Http\Controllers\Api\RSSNewsController;
+use App\Http\Controllers\Api\ArticleContentController;
+use App\Http\Controllers\Api\CategoryController;
+
+
 
 // Rute Publik (Authentication)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Rute Publik (Konten)
-Route::get('/news/top-headlines', [NewsController::class, 'index']);
-Route::get('/news/search', [NewsController::class, 'search']);
-Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{slug}', [CategoryController::class, 'show']);
+// Konten Berita dari RSS Feeds
+Route::prefix('news')->group(function () {
+    Route::get('/home', [RSSNewsController::class, 'getHomePageFeed']);
+    Route::get('/article-content', [ArticleContentController::class, 'fetch']);
+    Route::get('/categories', [CategoryController::class, 'index']); // -> Untuk Navbar & Footer
+    Route::get('/news', [RSSNewsController::class, 'getNews']); // -> Untuk HomePage & CategoryPage
+    // Contoh: GET /api/news?source=kompas&category=tekno
+    Route::get('/', [RSSNewsController::class, 'getNews']);
+
+    // Contoh: GET /api/news/search?q=gibran
+    Route::get('/search', [RSSNewsController::class, 'searchNews']);
+
+    // Contoh: GET /api/news/sources
+    Route::get('/sources', [RSSNewsController::class, 'getSources']);
+});
 
 // Rute yang Membutuhkan Autentikasi
 Route::middleware('auth:sanctum')->group(function () {
@@ -41,11 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/bookmarks', [UserController::class, 'getBookmarks']);
 
     // Interactions
-    Route::post('/news/{news}/vote', [InteractionController::class, 'handleVote']);
-    Route::post('/news/{news}/bookmark', [InteractionController::class, 'toggleBookmark']);
-
-    // Menambah komentar pada berita
-    Route::post('/news/{news:slug}/comments', [CommentController::class, 'store']);
+    Route::post('/interactions/comment', [ArticleInteractionController::class, 'postComment']);
+    Route::post('/interactions/vote', [ArticleInteractionController::class, 'handleVote']);
+    Route::post('/interactions/bookmark', [ArticleInteractionController::class, 'toggleBookmark']);
 });
 
 // ADMIN ROUTES

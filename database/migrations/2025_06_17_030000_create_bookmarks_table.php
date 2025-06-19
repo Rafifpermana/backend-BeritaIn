@@ -11,8 +11,8 @@ return new class extends Migration {
         Schema::create('bookmarks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('news_id')->constrained('news')->onDelete('cascade');
-            $table->unique(['user_id', 'news_id']); // Satu user hanya bisa bookmark satu berita sekali
+            $table->foreignId('article_id')->constrained('articles')->onDelete('cascade');
+            $table->unique(['user_id', 'article_id']); // Satu user hanya bisa bookmark satu berita sekali
             $table->timestamps();
         });
     }
