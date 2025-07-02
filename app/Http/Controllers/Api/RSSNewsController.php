@@ -21,10 +21,10 @@ class RSSNewsController extends Controller
 
     public function getHomePageFeed(Request $request)
     {
-        $limitPerSource = (int)$request->input('limit_per_source', 8);
+        $limitPerSource = (int)$request->input('limit_per_source', 10);
         $cacheKey = "rss_homepage_feed_limit_{$limitPerSource}";
 
-        $articles = Cache::remember($cacheKey, now()->addMinutes(20), function () use ($limitPerSource) {
+        $articles = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($limitPerSource) {
             $allArticles = [];
 
             // Loop melalui setiap sumber berita di konfigurasi
@@ -71,7 +71,7 @@ class RSSNewsController extends Controller
         }
 
         $cacheKey = "rss_search_" . md5($query) . "_" . ($categorySlug ?: 'all') . "_limit_{$limitPerSource}";
-        $articles = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query, $categorySlug, $limitPerSource) {
+        $articles = Cache::remember($cacheKey, now()->addMinutes(1), function () use ($query, $categorySlug, $limitPerSource) {
             $sources = config('newssources.rss_sources');
             $allArticles = [];
 
@@ -585,22 +585,35 @@ class RSSNewsController extends Controller
     private function parseRSSItem($item)
     {
         try {
-            // Mengakses namespace untuk media, content, dll.
             $namespaces = $item->getNamespaces(true);
             $media = $item->children($namespaces['media'] ?? null);
             $content = $item->children($namespaces['content'] ?? null);
-
             $imageUrl = null;
-            // Mencari gambar dari berbagai kemungkinan tag
-            if (isset($item->enclosure) && strpos((string)$item->enclosure['type'], 'image') !== false) {
-                $imageUrl = (string)$item->enclosure['url'];
-            } elseif (isset($media->content)) {
-                $imageUrl = (string)$media->content->attributes()->url;
-            } elseif (isset($content->encoded)) {
-                preg_match('/<img[^>]+src="([^"]+)"/', (string)$content->encoded, $matches);
-                $imageUrl = $matches[1] ?? null;
-            } elseif (preg_match('/<img[^>]+src="([^"]+)"/', (string)$item->description, $matches)) {
-                $imageUrl = $matches[1] ?? null;
+
+            // Cek apakah artikel berasal dari Tempo.co
+            if (isset($item->link) && strpos((string)$item->link, 'tempo.co') !== false) {
+                // Cari gambar dari description
+                if (preg_match('/<img[^>]+src="([^"]+)"/', (string)$item->description, $matches)) {
+                    $imageUrl = $matches[1];
+                } else {
+                    // Cari dari content:encoded jika tidak ada di description
+                    if (isset($content->encoded)) {
+                        preg_match('/<img[^>]+src="([^"]+)"/', (string)$content->encoded, $matches);
+                        $imageUrl = $matches[1] ?? null;
+                    }
+                }
+            } else {
+                // Logika biasa untuk sumber lain
+                if (isset($item->enclosure) && strpos((string)$item->enclosure['type'], 'image') !== false) {
+                    $imageUrl = (string)$item->enclosure['url'];
+                } elseif (isset($media->content)) {
+                    $imageUrl = (string)$media->content->attributes()->url;
+                } elseif (isset($content->encoded)) {
+                    preg_match('/<img[^>]+src="([^"]+)"/', (string)$content->encoded, $matches);
+                    $imageUrl = $matches[1] ?? null;
+                } elseif (preg_match('/<img[^>]+src="([^"]+)"/', (string)$item->description, $matches)) {
+                    $imageUrl = $matches[1] ?? null;
+                }
             }
 
             return [
@@ -613,7 +626,7 @@ class RSSNewsController extends Controller
             ];
         } catch (\Exception $e) {
             Log::warning('Gagal memproses satu item RSS', ['title' => (string)($item->title ?? 'N/A'), 'error' => $e->getMessage()]);
-            return null; // Lewati item yang error agar tidak menghentikan proses
+            return null;
         }
     }
 }
