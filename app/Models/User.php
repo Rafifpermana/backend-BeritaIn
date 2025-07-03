@@ -66,4 +66,11 @@ class User extends Authenticatable
     {
         return $this->morphMany(DatabaseNotification::class, 'notifiable')->orderBy('created_at', 'desc');
     }
+
+    public function getAvatarUrlAttribute(?string $value): ?string
+    {
+        return $value
+            ? asset('storage/' . $value)  // => "/storage/avatars/xxxx.jpg"
+            : null;
+    }
 }
