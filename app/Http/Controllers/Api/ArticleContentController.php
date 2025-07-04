@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
+use Illuminate\Support\Facades\Cache;
 
 class ArticleContentController extends Controller
 {
@@ -24,6 +25,22 @@ class ArticleContentController extends Controller
     {
         $request->validate(['url' => 'required|url']);
         $url = $request->url;
+
+        // Kunci cache dibuat unik berdasarkan URL artikel
+        $cacheKey = 'article_content_' . md5($url);
+
+        // Coba ambil dari cache. Jika ada, langsung kembalikan.
+        // Data akan disimpan di cache selama 60 menit.
+        $cachedContent = Cache::get($cacheKey);
+
+        if ($cachedContent) {
+            Log::info('Returning cached content for URL: ' . $url);
+            return response()->json([
+                'success' => true,
+                'data' => $cachedContent,
+                'cached' => true
+            ]);
+        }
 
         try {
             Log::info('Starting fetch for URL: ' . $url);
@@ -45,6 +62,9 @@ class ArticleContentController extends Controller
 
             // Langkah 3: Ekstrak title
             $title = $this->extractTitle($crawler);
+
+            // Langkah 3.5: Ekstrak gambar (TAMBAHKAN INI)
+            $image = $this->extractImage($crawler, $url);
 
             // Langkah 4: Ekstrak konten artikel
             $content = $this->extractContent($crawler, $url);
@@ -69,16 +89,26 @@ class ArticleContentController extends Controller
             // Langkah 5: Bersihkan konten dan format menjadi paragraf
             $cleanContent = $this->cleanAndFormatContent($content);
 
+            // Prepare data untuk response dan cache
+            $responseData = [
+                'title' => $title,
+                'content' => $cleanContent,
+                'paragraphs' => $this->extractParagraphs($cleanContent),
+                'image' => $image,
+                'url' => $url,
+                'word_count' => str_word_count(strip_tags($cleanContent)),
+                'excerpt' => $this->generateExcerpt($cleanContent),
+            ];
+
+            // Simpan ke cache selama 60 menit
+            Cache::put($cacheKey, $responseData, now()->addMinutes(60));
+
+            Log::info('Content cached successfully for URL: ' . $url);
+
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'title' => $title,
-                    'content' => $cleanContent,
-                    'paragraphs' => $this->extractParagraphs($cleanContent),
-                    'url' => $url,
-                    'word_count' => str_word_count(strip_tags($cleanContent)),
-                    'excerpt' => $this->generateExcerpt($cleanContent),
-                ]
+                'data' => $responseData,
+                'cached' => false
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal memproses scraping halaman', [
@@ -94,6 +124,71 @@ class ArticleContentController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
+    }
+
+    private function extractImage(Crawler $crawler, string $url): ?string
+    {
+        $selectors = [
+            'meta[property="og:image"]',
+            'meta[name="twitter:image"]',
+            'article img',
+            '.post-content img',
+            '.entry-content img',
+            '.article-content img',
+            '.content img',
+            'img[src*="wp-content"]',
+            'img[src*="uploads"]'
+        ];
+
+        foreach ($selectors as $selector) {
+            try {
+                if (strpos($selector, 'meta') === 0) {
+                    $metaNode = $crawler->filter($selector);
+                    if ($metaNode->count() > 0) {
+                        $imageSrc = $metaNode->attr('content');
+                        if (!empty($imageSrc)) {
+                            return $this->normalizeImageUrl($imageSrc, $url);
+                        }
+                    }
+                } else {
+                    $imgNode = $crawler->filter($selector);
+                    if ($imgNode->count() > 0) {
+                        $imageSrc = $imgNode->first()->attr('src');
+                        if (!empty($imageSrc)) {
+                            return $this->normalizeImageUrl($imageSrc, $url);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalize image URL to absolute URL
+     */
+    private function normalizeImageUrl(string $imageSrc, string $baseUrl): string
+    {
+        if (filter_var($imageSrc, FILTER_VALIDATE_URL)) {
+            return $imageSrc;
+        }
+
+        $parsedUrl = parse_url($baseUrl);
+        $scheme = $parsedUrl['scheme'] ?? 'https';
+        $host = $parsedUrl['host'] ?? '';
+
+        if (strpos($imageSrc, '//') === 0) {
+            return $scheme . ':' . $imageSrc;
+        }
+
+        if (strpos($imageSrc, '/') === 0) {
+            return $scheme . '://' . $host . $imageSrc;
+        }
+
+        return $scheme . '://' . $host . '/' . ltrim($imageSrc, '/');
     }
 
     /**

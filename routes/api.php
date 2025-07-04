@@ -27,7 +27,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/news', [RSSNewsController::class, 'getNews']);
 Route::get('/news/sources', [RSSNewsController::class, 'getSources']);
 Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/article-content', [ArticleContentController::class, 'fetch']);
+Route::post('/fetch', [ArticleContentController::class, 'fetch']);
 
 
 // --- RUTE TERPROTEKSI (MEMBUTUHKAN LOGIN) ---
