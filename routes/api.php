@@ -50,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Interaksi Artikel
     Route::post('/interactions/comment', [ArticleInteractionController::class, 'postComment']);
     Route::post('/interactions/vote', [ArticleInteractionController::class, 'handleVote']);
+    Route::get('/interactions/article', [ArticleInteractionController::class, 'getArticleInteractions']);
+    Route::get('/interactions/comments', [ArticleInteractionController::class, 'getComments']);
     Route::post('/interactions/bookmark', [ArticleInteractionController::class, 'toggleBookmark']);
 });
 

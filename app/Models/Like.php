@@ -12,11 +12,27 @@ class Like extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var array<int, string>
      */
     protected $fillable = [
         'user_id',
-        'news_id',
-        'type',
+        'article_id',
+        'type', // 'like' atau 'dislike'
     ];
+
+    /**
+     * Mendefinisikan bahwa sebuah 'like' dimiliki oleh satu User.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Mendefinisikan bahwa sebuah 'like' dimiliki oleh satu Article.
+     */
+    public function article()
+    {
+        return $this->belongsTo(Article::class);
+    }
 }
