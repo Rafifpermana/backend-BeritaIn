@@ -182,7 +182,7 @@ class RSSNewsController extends Controller
         }
 
         $categorySlug = $request->input('category');
-        $limitPerSource = (int)$request->input('limit_per_source', 20);
+        $limitPerSource = (int)$request->input('limit_per_source', 50);
 
         // Cache key berdasarkan kategori dan limit
         $cacheKey = "rss_news_" . ($categorySlug ?: 'all') . "_limit_{$limitPerSource}";
@@ -504,7 +504,7 @@ class RSSNewsController extends Controller
      * Logika utama untuk mengambil dan mem-parsing RSS Feed.
      * (Versi Baru yang Lebih Baik)
      */
-    private function parseRSSFeed($url, $page = 1, $limit = 20)
+    private function parseRSSFeed($url, $page = 1, $limit = 50)
     {
         try {
             // --- PERBAIKAN: Tambahkan error handling untuk HTTP request ---

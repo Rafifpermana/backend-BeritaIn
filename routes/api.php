@@ -29,6 +29,10 @@ Route::get('/news/sources', [RSSNewsController::class, 'getSources']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::post('/fetch', [ArticleContentController::class, 'fetch']);
 
+// **PERBAIKAN:** Rute untuk melihat interaksi dan komentar dibuat publik
+Route::get('/interactions/article', [ArticleInteractionController::class, 'getArticleInteractions']);
+Route::get('/interactions/comments', [ArticleInteractionController::class, 'getComments']);
+
 
 // --- RUTE TERPROTEKSI (MEMBUTUHKAN LOGIN) ---
 Route::middleware('auth:sanctum')->group(function () {
@@ -39,7 +43,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/password', [UserController::class, 'updatePassword']);
 
-
     // Notifikasi & Bookmark
     Route::get('/user/notifications', [UserController::class, 'getNotifications']);
     Route::post('/user/notifications/mark-all-as-read', [UserController::class, 'markAllNotificationsAsRead']);
@@ -47,11 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/user/notifications/{notification}', [UserController::class, 'deleteNotification']);
     Route::get('/user/bookmarks', [UserController::class, 'getBookmarks']);
 
-    // Interaksi Artikel
+    // Interaksi Artikel (Aksi yang memerlukan login)
     Route::post('/interactions/comment', [ArticleInteractionController::class, 'postComment']);
     Route::post('/interactions/vote', [ArticleInteractionController::class, 'handleVote']);
-    Route::get('/interactions/article', [ArticleInteractionController::class, 'getArticleInteractions']);
-    Route::get('/interactions/comments', [ArticleInteractionController::class, 'getComments']);
     Route::post('/interactions/bookmark', [ArticleInteractionController::class, 'toggleBookmark']);
 });
 
@@ -61,7 +62,7 @@ Route::middleware(['auth:sanctum', 'is.admin'])->prefix('admin')->group(function
     Route::get('/dashboard-stats', [DashboardController::class, 'getStats']);
 
     // Manajemen Pengguna (CRUD)
-    Route::get('/users/search', [UserManagementController::class, 'search']); // Rute baru untuk search
+    Route::get('/users/search', [UserManagementController::class, 'search']);
     Route::apiResource('users', UserManagementController::class);
     Route::patch('/users/{user}/role', [UserManagementController::class, 'updateRole']);
 
