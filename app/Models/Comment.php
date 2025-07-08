@@ -50,4 +50,13 @@ class Comment extends Model
     {
         return $this->hasMany(Comment::class, 'parent_id');
     }
+    public function votes()
+    {
+        return $this->hasMany(UserCommentVote::class);
+    }
+
+    public function userVote($userId)
+    {
+        return $this->votes()->where('user_id', $userId)->first();
+    }
 }

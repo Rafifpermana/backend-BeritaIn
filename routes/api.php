@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\CommentModerationController;
 use App\Http\Controllers\Api\Admin\BroadcastController;
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\CommentController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -54,6 +56,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/interactions/comment', [ArticleInteractionController::class, 'postComment']);
     Route::post('/interactions/vote', [ArticleInteractionController::class, 'handleVote']);
     Route::post('/interactions/bookmark', [ArticleInteractionController::class, 'toggleBookmark']);
+
+    Route::post('/comments/{comment}/like', [CommentController::class, 'like']);
+    Route::post('/comments/{comment}/dislike', [CommentController::class, 'dislike']);
+    Route::delete('/comments/{comment}/vote', [CommentController::class, 'removeVote']);
 });
 
 
