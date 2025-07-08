@@ -57,7 +57,7 @@ class ArticleInteractionController extends Controller
             ]);
 
             // Load the user relationship
-            $comment->load('user');
+            $comment->load('user:id,name,avatar_url');
 
             return response()->json([
                 'success' => true,
@@ -65,7 +65,12 @@ class ArticleInteractionController extends Controller
                 'id' => $comment->id,
                 'content' => $comment->content,
                 'created_at' => $comment->created_at,
+                'likes' => 0,
+                'dislikes' => 0,
+                'userVoteOnComment' => null,
+                'author' => $comment->user->name,
                 'user' => $comment->user,
+                'replies' => []
             ], 201);
         } catch (\Exception $e) {
             Log::error('Error creating comment: ' . $e->getMessage());
@@ -245,11 +250,56 @@ class ArticleInteractionController extends Controller
                 ]);
             }
 
+            $userId = Auth::id();
+
             $comments = Comment::where('article_id', $article->id)
                 ->whereNull('parent_id')
-                ->with(['user', 'replies.user'])
+                ->with(['user:id,name,avatar_url', 'replies.user:id,name,avatar_url'])
+                ->withCount(['votes as likes' => function ($query) {
+                    $query->where('vote_type', 'like');
+                }])
+                ->withCount(['votes as dislikes' => function ($query) {
+                    $query->where('vote_type', 'dislike');
+                }])
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->map(function ($comment) use ($userId) {
+                    $userVote = null;
+                    if ($userId) {
+                        $vote = $comment->votes()->where('user_id', $userId)->first();
+                        $userVote = $vote ? $vote->vote_type : null;
+                    }
+
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'created_at' => $comment->created_at,
+                        'likes' => $comment->likes,
+                        'dislikes' => $comment->dislikes,
+                        'userVoteOnComment' => $userVote === 'like' ? 'liked' : ($userVote === 'dislike' ? 'disliked' : null),
+                        'author' => $comment->user->name,
+                        'user' => $comment->user,
+                        'replies' => $comment->replies->map(function ($reply) use ($userId) {
+                            $replyUserVote = null;
+                            if ($userId) {
+                                $vote = $reply->votes()->where('user_id', $userId)->first();
+                                $replyUserVote = $vote ? $vote->vote_type : null;
+                            }
+
+                            return [
+                                'id' => $reply->id,
+                                'content' => $reply->content,
+                                'created_at' => $reply->created_at,
+                                'likes' => $reply->votes()->where('vote_type', 'like')->count(),
+                                'dislikes' => $reply->votes()->where('vote_type', 'dislike')->count(),
+                                'userVoteOnComment' => $replyUserVote === 'like' ? 'liked' : ($replyUserVote === 'dislike' ? 'disliked' : null),
+                                'author' => $reply->user->name,
+                                'user' => $reply->user,
+                                'replies' => []
+                            ];
+                        })
+                    ];
+                });
 
             return response()->json([
                 'success' => true,

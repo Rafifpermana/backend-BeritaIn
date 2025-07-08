@@ -58,10 +58,15 @@ class CommentController extends Controller
             $comment->increment('likes');
         }
 
+        $currentUserVote = $comment->votes()->where('user_id', $userId)->first();
+        $userVoteStatus = $currentUserVote ?
+            ($currentUserVote->vote_type === 'like' ? 'liked' : 'disliked') : null;
+
         return response()->json([
             'message' => 'Vote berhasil',
-            'likes' => $comment->fresh()->likes,
-            'dislikes' => $comment->fresh()->dislikes
+            'likes' => $comment->fresh()->votes()->where('vote_type', 'like')->count(),
+            'dislikes' => $comment->fresh()->votes()->where('vote_type', 'dislike')->count(),
+            'userVote' => $userVoteStatus
         ]);
     }
 

@@ -11,7 +11,7 @@ class Comment extends Model
 
     protected $fillable = [
         'content',
-        'news_id',
+        'article_id',  // Ubah dari news_id ke article_id
         'user_id',
         'parent_id',
         'status',
@@ -28,11 +28,11 @@ class Comment extends Model
     }
 
     /**
-     * Get the news that the comment belongs to.
+     * Get the article that the comment belongs to.
      */
-    public function news()
+    public function article()  // Ubah dari news() ke article()
     {
-        return $this->belongsTo(News::class);
+        return $this->belongsTo(Article::class);
     }
 
     /**
@@ -50,6 +50,7 @@ class Comment extends Model
     {
         return $this->hasMany(Comment::class, 'parent_id');
     }
+
     public function votes()
     {
         return $this->hasMany(UserCommentVote::class);
