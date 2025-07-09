@@ -54,6 +54,7 @@ class User extends Authenticatable
 
     public function bookmarks()
     {
+        // Pastikan relasi ini benar menunjuk ke model Bookmark
         return $this->hasMany(Bookmark::class);
     }
 

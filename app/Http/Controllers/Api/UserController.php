@@ -148,11 +148,15 @@ class UserController extends Controller
     // Mengambil semua bookmark milik user
     public function getBookmarks(Request $request)
     {
+        // Ubah bagian ->with(...)
         $bookmarks = $request->user()
             ->bookmarks()
-            ->with('news.author:id,name', 'news.category:id,name,slug')
+            // Ganti relasi yang di-load dari 'news' menjadi 'article'
+            ->with('article') // Cukup load relasi article
+            ->latest() // Urutkan berdasarkan yang terbaru
             ->paginate(10);
 
+        // Respon tidak perlu diubah
         return response()->json($bookmarks);
     }
 }
