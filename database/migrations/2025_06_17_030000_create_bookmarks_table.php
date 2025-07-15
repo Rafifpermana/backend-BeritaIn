@@ -1,6 +1,6 @@
 <?php
 
-// database/migrations/xxxx_xx_xx_xxxxxx_create_bookmarks_table.php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('article_id')->constrained('articles')->onDelete('cascade');
-            $table->unique(['user_id', 'article_id']); // Satu user hanya bisa bookmark satu berita sekali
+            $table->unique(['user_id', 'article_id']);
             $table->timestamps();
         });
     }

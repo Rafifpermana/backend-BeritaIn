@@ -31,17 +31,13 @@ class RSSNewsController extends Controller
         $articles = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($limitPerSource) {
             $allArticles = [];
 
-            // Loop melalui setiap sumber berita di konfigurasi
             foreach ($this->rssSources as $sourceKey => $sourceData) {
-                // Ambil feed dari kategori 'all' untuk setiap sumber
+
                 if (isset($sourceData['feeds']['all'])) {
                     $feedUrl = $sourceData['feeds']['all'];
 
-                    // Kita panggil method parseRSSFeed yang sudah ada
-                    // dengan page=1 dan limit yang kita tentukan
                     $sourceArticles = $this->parseRSSFeed($feedUrl, 1, $limitPerSource);
 
-                    // Tambahkan nama sumber ke setiap artikel
                     foreach ($sourceArticles as &$article) {
                         $article['source_name'] = $sourceData['name'];
                     }
@@ -50,7 +46,6 @@ class RSSNewsController extends Controller
                 }
             }
 
-            // Acak urutan semua artikel yang sudah digabung
             shuffle($allArticles);
 
             return $allArticles;
@@ -59,29 +54,25 @@ class RSSNewsController extends Controller
         return response()->json($articles);
     }
 
-    // Ganti fungsi searchNews Anda dengan yang ini
     public function searchNews(Request $request)
     {
         $query = $request->input('q', '');
         $categorySlug = $request->input('category');
-        $limitPerSource = (int)$request->input('limit_per_source', 30); // Ambil lebih banyak hasil
+        $limitPerSource = (int)$request->input('limit_per_source', 30);
 
         if (empty(trim($query))) {
             return response()->json(['data' => [], 'message' => 'Query pencarian diperlukan'], 400);
         }
 
-        // Menggunakan cache tetap penting untuk performa
         $cacheKey = "rss_search_raw_" . md5($query) . "_" . ($categorySlug ?: 'all');
         $allArticles = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($categorySlug) {
             $sources = config('newssources.rss_sources');
             $articles = [];
-            $limit = 100; // Ambil banyak artikel untuk di-filter
+            $limit = 100;
 
-            // Logika pengambilan artikel (tidak berubah)
             if ($categorySlug) {
-                // ... (logika Anda yang sudah ada untuk mengambil berdasarkan kategori)
             } else {
-                // Ambil dari semua sumber jika tidak ada kategori
+
                 foreach ($sources as $sourceKey => $sourceData) {
                     if (isset($sourceData['feeds']['all'])) {
                         $feedUrl = $sourceData['feeds']['all'];
@@ -96,23 +87,19 @@ class RSSNewsController extends Controller
             return $articles;
         });
 
-        // Filter dan urutkan dengan logika baru
         $filteredArticles = $this->filterArticlesByQuery($allArticles, $query);
-        $sortedArticles = $this->sortArticlesByRelevance($filteredArticles); // Pengurutan sekarang lebih sederhana
+        $sortedArticles = $this->sortArticlesByRelevance($filteredArticles);
 
-        // Kembalikan hasil yang sudah diurutkan dan dipotong sesuai limit
         return response()->json(array_slice($sortedArticles, 0, $limitPerSource));
     }
 
-    // Ganti fungsi filterArticlesByQuery Anda dengan yang ini
     private function filterArticlesByQuery($articles, $query)
     {
         $query = strtolower(trim($query));
         if (empty($query)) return [];
 
-        // Ambil kata kunci yang lebih dari 2 huruf
         $keywords = array_filter(explode(' ', $query), fn($k) => strlen(trim($k)) > 2);
-        // Jika tidak ada kata kunci panjang, gunakan semua kata kunci
+
         if (empty($keywords)) {
             $keywords = explode(' ', $query);
         }
@@ -123,7 +110,6 @@ class RSSNewsController extends Controller
             $description = strtolower($article['description'] ?? '');
             $score = 0;
 
-            // Skor 1: Jika seluruh frasa pencarian ada di judul (skor tertinggi)
             if (str_contains($title, $query)) {
                 $score += 50;
             }
@@ -133,22 +119,19 @@ class RSSNewsController extends Controller
                 $keyword = trim($keyword);
                 if (empty($keyword)) continue;
 
-                // Cek apakah kata kunci ada di judul atau deskripsi
                 if (str_contains($title, $keyword)) {
-                    $score += 15; // Beri skor lebih tinggi jika di judul
+                    $score += 15;
                     $matchedKeywords++;
                 } elseif (str_contains($description, $keyword)) {
-                    $score += 5; // Skor standar jika di deskripsi
+                    $score += 5;
                     $matchedKeywords++;
                 }
             }
 
-            // Skor 2: Beri bonus besar jika SEMUA kata kunci ditemukan
             if (count($keywords) > 1 && $matchedKeywords === count($keywords)) {
                 $score += 30;
             }
 
-            // Hanya masukkan artikel yang memiliki skor (ditemukan kecocokan)
             if ($score > 0) {
                 $article['relevance_score'] = $score;
                 $filteredResults[] = $article;
@@ -158,25 +141,22 @@ class RSSNewsController extends Controller
         return $filteredResults;
     }
 
-    // Ganti fungsi sortArticlesByRelevance Anda dengan yang ini
     private function sortArticlesByRelevance($articles)
     {
         usort($articles, function ($a, $b) {
-            // Prioritas 1: Urutkan berdasarkan skor relevansi tertinggi
             if ($a['relevance_score'] !== $b['relevance_score']) {
                 return $b['relevance_score'] <=> $a['relevance_score'];
             }
-            // Prioritas 2: Jika skor sama, urutkan berdasarkan tanggal terbaru
+
             return strtotime($b['pubDate']) <=> strtotime($a['pubDate']);
         });
 
         return $articles;
     }
 
-    // Update method getNews untuk mendukung search
     public function getNews(Request $request)
     {
-        // Jika ada parameter search query, redirect ke search
+
         if ($request->has('q') && !empty(trim($request->input('q')))) {
             return $this->searchNews($request);
         }
@@ -184,7 +164,6 @@ class RSSNewsController extends Controller
         $categorySlug = $request->input('category');
         $limitPerSource = (int)$request->input('limit_per_source', 50);
 
-        // Cache key berdasarkan kategori dan limit
         $cacheKey = "rss_news_" . ($categorySlug ?: 'all') . "_limit_{$limitPerSource}";
 
         $articles = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($categorySlug, $limitPerSource) {
@@ -192,13 +171,11 @@ class RSSNewsController extends Controller
             $allArticles = [];
 
             if ($categorySlug) {
-                // Jika ada kategori spesifik, cari di semua sumber yang memiliki kategori tersebut
                 foreach ($sources as $sourceKey => $sourceData) {
                     if (isset($sourceData['feeds'][$categorySlug])) {
                         $feedUrl = $sourceData['feeds'][$categorySlug];
                         $sourceArticles = $this->parseRSSFeed($feedUrl, 1, $limitPerSource);
 
-                        // Tambahkan informasi sumber dan kategori ke setiap artikel
                         foreach ($sourceArticles as &$article) {
                             $article['source_name'] = $sourceData['name'];
                             $article['source_key'] = $sourceKey;
@@ -209,8 +186,6 @@ class RSSNewsController extends Controller
                     }
                 }
 
-                // Jika tidak ada artikel ditemukan untuk kategori spesifik, 
-                // coba cari dengan mapping kategori alternatif
                 if (empty($allArticles)) {
                     $categoryMappings = $this->getCategoryMappings();
 
@@ -232,32 +207,26 @@ class RSSNewsController extends Controller
                     }
                 }
 
-                // Urutkan berdasarkan tanggal publikasi terbaru
                 usort($allArticles, fn($a, $b) => strtotime($b['pubDate']) <=> strtotime($a['pubDate']));
             } else {
-                // ================== LOGIKA BARU UNTUK HALAMAN UTAMA ==================
-                // Ambil beberapa artikel dari SETIAP sumber berita
+
                 foreach ($sources as $sourceKey => $sourceData) {
                     if (isset($sourceData['feeds']['all'])) {
                         $feedUrl = $sourceData['feeds']['all'];
 
-                        // Ambil artikel dari satu sumber
                         $sourceArticles = $this->parseRSSFeed($feedUrl, 1, $limitPerSource);
 
-                        // Tambahkan informasi sumber ke setiap artikel
                         foreach ($sourceArticles as &$article) {
                             $article['source_name'] = $sourceData['name'];
                             $article['source_key'] = $sourceKey;
                             $article['category'] = 'all';
                         }
 
-                        // Gabungkan hasilnya ke array utama
                         $allArticles = array_merge($allArticles, $sourceArticles);
                     }
                 }
-                // Setelah semua sumber digabungkan, baru kita acak urutannya
+
                 shuffle($allArticles);
-                // ====================================================================
             }
 
             return $allArticles;
@@ -285,7 +254,7 @@ class RSSNewsController extends Controller
                 'kompas' => 'ekonomi'
             ],
 
-            // Edukasi - mapping ke kategori terdekat
+            // Edukasi 
             'edukasi' => [
                 'cnn' => 'nasional',
                 'kompas' => 'news',
@@ -342,7 +311,7 @@ class RSSNewsController extends Controller
                 'tempo' => 'bola'
             ],
 
-            // Otomotif - mapping ke teknologi atau ekonomi
+            // Otomotif 
             'otomotif' => [
                 'cnn' => 'teknologi',
                 'cnbc' => 'tech',
@@ -366,7 +335,7 @@ class RSSNewsController extends Controller
                 'tempo' => 'nasional'
             ],
 
-            // Sains - mapping ke teknologi
+            // Sains 
             'sains' => [
                 'cnn' => 'teknologi',
                 'cnbc' => 'tech',
@@ -384,7 +353,7 @@ class RSSNewsController extends Controller
                 'tempo' => 'tekno'
             ],
 
-            // Travel - mapping ke lifestyle atau gaya hidup
+            // Travel 
             'travel' => [
                 'cnn' => 'gaya-hidup',
                 'cnbc' => 'lifestyle',
@@ -467,7 +436,6 @@ class RSSNewsController extends Controller
             ['name' => 'Travel', 'slug' => 'travel']
         ];
 
-        // Tambahkan informasi availability berdasarkan RSS sources
         $categoryMappings = $this->getCategoryMappings();
 
         foreach ($predefinedCategories as &$category) {
@@ -507,19 +475,18 @@ class RSSNewsController extends Controller
     private function parseRSSFeed($url, $page = 1, $limit = 50)
     {
         try {
-            // --- PERBAIKAN: Tambahkan error handling untuk HTTP request ---
-            $response = Http::timeout(10)->get($url); // Timeout 10 detik
+
+            $response = Http::timeout(10)->get($url);
 
             if (!$response->successful()) {
                 Log::error('Gagal mengambil RSS Feed', [
                     'url' => $url,
                     'status' => $response->status()
                 ]);
-                return []; // Kembalikan array kosong jika request gagal
+                return [];
             }
 
             $xmlString = $response->body();
-            // Ganti tag yang tidak standar jika ada
             $xmlString = str_replace('<media:content', '<content', $xmlString);
             $xml = simplexml_load_string($xmlString, 'SimpleXMLElement', LIBXML_NOCDATA);
 
@@ -552,7 +519,6 @@ class RSSNewsController extends Controller
     private function parseRSSItem($item)
     {
         try {
-            // --- Logika pengambilan gambar yang sudah diperbaiki ---
             $namespaces = $item->getNamespaces(true);
             $imageUrl = null;
 
@@ -567,7 +533,6 @@ class RSSNewsController extends Controller
                 $imageUrl = $matches[1] ?? null;
             }
 
-            // --- Logika pengambilan data interaksi ---
             $articleUrl = (string)$item->link;
             $dbArticle = Article::where('url', $articleUrl)->first();
 
@@ -575,7 +540,6 @@ class RSSNewsController extends Controller
             $dislikesCount = $dbArticle ? $dbArticle->likes()->where('type', 'dislike')->count() : 0;
             $commentsCount = $dbArticle ? $dbArticle->comments()->count() : 0;
 
-            // --- Menggabungkan semua data ---
             return [
                 'title' => (string)$item->title,
                 'link' => $articleUrl,

@@ -85,35 +85,34 @@ class ArticleInteractionController extends Controller
     public function handleVote(Request $request)
     {
         try {
-            // Ini sudah benar, mendapatkan artikel atau membuatnya jika belum ada.
+
             $article = $this->getOrCreateArticle($request);
 
             $validated = $request->validate(['type' => 'required|in:like,dislike']);
             $userId = Auth::id();
             $voteType = $validated['type'];
 
-            // Gunakan updateOrCreate untuk logika yang lebih bersih
+
             $vote = $article->likes()->updateOrCreate(
                 [
-                    // Kondisi untuk mencari: cari vote dari user ini untuk artikel ini
+
                     'user_id' => $userId,
                 ],
                 [
-                    // Data untuk di-update atau di-create
                     'type' => $voteType,
                 ]
             );
 
             $message = 'Berhasil memproses vote';
 
-            // Dapatkan jumlah vote terbaru
+
             $likesCount = $article->likes()->where('type', 'like')->count();
             $dislikesCount = $article->likes()->where('type', 'dislike')->count();
 
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                // 'current_vote' akan selalu sama dengan $voteType setelah ini
+
                 'current_vote' => $vote->type,
                 'likes_count' => $likesCount,
                 'dislikes_count' => $dislikesCount,

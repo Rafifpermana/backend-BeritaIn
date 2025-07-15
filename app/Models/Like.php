@@ -17,7 +17,7 @@ class Like extends Model
     protected $fillable = [
         'user_id',
         'article_id',
-        'type', // 'like' atau 'dislike'
+        'type',
     ];
 
     /**

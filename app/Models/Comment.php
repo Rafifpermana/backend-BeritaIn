@@ -11,7 +11,7 @@ class Comment extends Model
 
     protected $fillable = [
         'content',
-        'article_id',  // Ubah dari news_id ke article_id
+        'article_id',
         'user_id',
         'parent_id',
         'status',
@@ -30,7 +30,7 @@ class Comment extends Model
     /**
      * Get the article that the comment belongs to.
      */
-    public function article()  // Ubah dari news() ke article()
+    public function article()
     {
         return $this->belongsTo(Article::class);
     }

@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // app/Http/Controllers/Api/AuthController.php
+
 
     public function register(Request $request)
     {
@@ -24,7 +24,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'points' => 100, // <- PERUBAHAN DI SINI
+            'points' => 100,
         ]);
 
         return response()->json([

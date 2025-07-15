@@ -14,12 +14,10 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    // Mengambil data user yang sedang login
     public function show(Request $request)
     {
         $user = $request->user();
 
-        // Pastikan avatar_url adalah URL penuh
         if ($user->avatar_url) {
             $user->avatar_url = asset('storage/' . $user->avatar_url);
         }
@@ -27,15 +25,13 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    // Update profil (nama & avatar)
     public function update(Request $request, User $user)
     {
-        // Keamanan: Pastikan user hanya bisa mengedit profilnya sendiri
+
         if ($user->id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Validasi data yang masuk dari frontend
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
@@ -49,7 +45,6 @@ class UserController extends Controller
         ]);
     }
 
-    // Ganti password
     public function updatePassword(Request $request)
     {
         try {
@@ -77,7 +72,6 @@ class UserController extends Controller
         }
     }
 
-    // Update profil: nama & avatar
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -92,26 +86,23 @@ class UserController extends Controller
         }
 
         if ($request->hasFile('avatar')) {
-            // Hapus file lama kalau ada
+
             if ($user->avatar_url) {
-                // $user->avatar_url sekarang path relatif, jadi:
+
                 Storage::disk('public')->delete($user->getRawOriginal('avatar_url'));
             }
             $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar_url = $path;       // **path** relatif
+            $user->avatar_url = $path;
         }
 
         $user->save();
 
-        // Karena di model ada accessor, $user->avatar_url otomatis jadi URL penuh
         return response()->json([
             'message' => 'Profile updated successfully!',
             'user'    => $user,
         ]);
     }
 
-
-    // Mengambil semua notifikasi milik user
     public function getNotifications(Request $request)
     {
         return $request->user()->notifications()->paginate(15);
@@ -145,18 +136,16 @@ class UserController extends Controller
         }
         return response()->json(['message' => 'Notification not found.'], 404);
     }
-    // Mengambil semua bookmark milik user
+
     public function getBookmarks(Request $request)
     {
-        // Ubah bagian ->with(...)
+
         $bookmarks = $request->user()
             ->bookmarks()
-            // Ganti relasi yang di-load dari 'news' menjadi 'article'
-            ->with('article') // Cukup load relasi article
-            ->latest() // Urutkan berdasarkan yang terbaru
+            ->with('article')
+            ->latest()
             ->paginate(10);
 
-        // Respon tidak perlu diubah
         return response()->json($bookmarks);
     }
 }

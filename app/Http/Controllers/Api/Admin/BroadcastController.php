@@ -17,7 +17,7 @@ class BroadcastController extends Controller
             'message' => 'required|string',
         ]);
 
-        $users = User::where('role', 'user')->get(); // Mengirim ke semua user
+        $users = User::where('role', 'user')->get();
         Notification::send($users, new AdminBroadcastNotification($request->title, $request->message));
 
         return response()->json(['message' => 'Broadcast notification sent successfully.']);

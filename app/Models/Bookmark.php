@@ -16,12 +16,11 @@ class Bookmark extends Model
      */
     protected $fillable = [
         'user_id',
-        'article_id', // Sesuaikan dengan nama kolom di migrasi
+        'article_id',
     ];
 
-    public function article() // Ubah nama fungsi relasi
+    public function article()
     {
-        // Pastikan menunjuk ke model yang benar (Article::class)
         return $this->belongsTo(Article::class);
     }
 }

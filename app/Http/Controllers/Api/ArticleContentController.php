@@ -26,11 +26,9 @@ class ArticleContentController extends Controller
         $request->validate(['url' => 'required|url']);
         $url = $request->url;
 
-        // Kunci cache dibuat unik berdasarkan URL artikel
+
         $cacheKey = 'article_content_' . md5($url);
 
-        // Coba ambil dari cache. Jika ada, langsung kembalikan.
-        // Data akan disimpan di cache selama 60 menit.
         $cachedContent = Cache::get($cacheKey);
 
         if ($cachedContent) {
@@ -45,7 +43,7 @@ class ArticleContentController extends Controller
         try {
             Log::info('Starting fetch for URL: ' . $url);
 
-            // Strategy 1: Try multiple fetch methods
+
             $html = $this->fetchWithMultipleStrategies($url);
 
             if (!$html) {
@@ -57,20 +55,20 @@ class ArticleContentController extends Controller
 
             Log::info('Successfully fetched HTML, length: ' . strlen($html));
 
-            // Langkah 2: Proses HTML dengan DomCrawler
+
             $crawler = new Crawler($html);
 
-            // Langkah 3: Ekstrak title
+
             $title = $this->extractTitle($crawler);
 
-            // Langkah 3.5: Ekstrak gambar (TAMBAHKAN INI)
+
             $image = $this->extractImage($crawler, $url);
 
-            // Langkah 4: Ekstrak konten artikel
+
             $content = $this->extractContent($crawler, $url);
 
             if (empty($content)) {
-                // Try alternative extraction methods
+
                 $content = $this->extractContentAlternative($crawler);
             }
 
@@ -86,10 +84,10 @@ class ArticleContentController extends Controller
                 ], 404);
             }
 
-            // Langkah 5: Bersihkan konten dan format menjadi paragraf
+
             $cleanContent = $this->cleanAndFormatContent($content);
 
-            // Prepare data untuk response dan cache
+
             $responseData = [
                 'title' => $title,
                 'content' => $cleanContent,
@@ -100,7 +98,7 @@ class ArticleContentController extends Controller
                 'excerpt' => $this->generateExcerpt($cleanContent),
             ];
 
-            // Simpan ke cache selama 60 menit
+
             Cache::put($cacheKey, $responseData, now()->addMinutes(60));
 
             Log::info('Content cached successfully for URL: ' . $url);
@@ -207,7 +205,7 @@ class ArticleContentController extends Controller
             try {
                 Log::info("Trying strategy: $strategy");
                 $html = $this->$strategy($url);
-                if ($html && strlen($html) > 1000) { // Minimal content check
+                if ($html && strlen($html) > 1000) {
                     Log::info("Strategy $strategy succeeded");
                     return $html;
                 }
@@ -269,7 +267,7 @@ class ArticleContentController extends Controller
      */
     private function fetchWithDelayAndRetry(string $url): ?string
     {
-        sleep(2); // Wait 2 seconds
+        sleep(2);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -355,20 +353,20 @@ class ArticleContentController extends Controller
      */
     private function extractContentAlternative(Crawler $crawler): string
     {
-        // Try to get all paragraph content as fallback
+
         $paragraphs = $crawler->filter('p');
         if ($paragraphs->count() > 3) {
             $content = '';
             $paragraphs->each(function (Crawler $node) use (&$content) {
                 $text = trim($node->text());
-                if (strlen($text) > 50) { // Only meaningful paragraphs
+                if (strlen($text) > 50) {
                     $content .= '<p>' . $text . '</p>';
                 }
             });
             return $content;
         }
 
-        // Try to get main content div
+
         $mainContent = $crawler->filter('main, #main, .main, #content, .content');
         if ($mainContent->count() > 0) {
             return $mainContent->first()->html();
@@ -384,7 +382,7 @@ class ArticleContentController extends Controller
     {
         $selectors = [];
 
-        // Check common content selectors
+
         $testSelectors = [
             'article',
             '.article',
@@ -473,7 +471,7 @@ class ArticleContentController extends Controller
                     $content = $contentNode->first()->html();
                     $textContent = trim(strip_tags($content));
 
-                    // Must have meaningful content (more than 100 characters)
+
                     if (strlen($textContent) > 100) {
                         return $content;
                     }
@@ -568,7 +566,7 @@ class ArticleContentController extends Controller
         try {
             $crawler = new Crawler($content);
 
-            // Remove unwanted elements first
+
             $unwantedSelectors = [
                 'script',
                 'style',
@@ -631,7 +629,7 @@ class ArticleContentController extends Controller
                 }
             }
 
-            // Extract only meaningful paragraphs
+
             $cleanContent = '';
             $paragraphs = $crawler->filter('p');
 
@@ -639,16 +637,16 @@ class ArticleContentController extends Controller
                 $paragraphs->each(function (Crawler $node) use (&$cleanContent) {
                     $text = trim($node->text());
 
-                    // Filter out unwanted paragraphs
+
                     $unwantedPatterns = [
                         '/^Artikel Terkait:/i',
                         '/^Pilihan Editor:/i',
                         '/Halo Sahabat/i',
                         '/Telegram/i',
-                        '/^\s*$/', // Empty paragraphs
+                        '/^\s*$/',
                         '/^Reporter\s*$/i',
                         '/^Antara\s*$/i',
-                        '/^\d{1,2}\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)/i' // Dates
+                        '/^\d{1,2}\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)/i'
                     ];
 
                     $shouldSkip = false;
@@ -659,7 +657,7 @@ class ArticleContentController extends Controller
                         }
                     }
 
-                    // Only include paragraphs with substantial content
+
                     if (!$shouldSkip && strlen($text) > 30 && !$this->isMetadataText($text)) {
                         $cleanContent .= '<p>' . $text . '</p>' . "\n";
                     }
@@ -701,13 +699,13 @@ class ArticleContentController extends Controller
      */
     private function fallbackCleanContent(string $content): string
     {
-        // Strip all HTML tags except paragraphs
+
         $content = strip_tags($content, '<p>');
 
-        // Remove extra whitespace
+
         $content = preg_replace('/\s+/', ' ', $content);
 
-        // Split into sentences and rebuild paragraphs
+
         $sentences = preg_split('/(?<=[.!?])\s+/', $content);
         $cleanContent = '';
 
@@ -737,7 +735,7 @@ class ArticleContentController extends Controller
                 }
             });
         } catch (\Exception $e) {
-            // Fallback: extract using regex
+
             preg_match_all('/<p[^>]*>(.*?)<\/p>/is', $content, $matches);
             foreach ($matches[1] as $match) {
                 $text = trim(strip_tags($match));

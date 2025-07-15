@@ -1,7 +1,5 @@
 <?php
 
-// app/Http/Controllers/Api/Admin/DashboardController.php
-
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
@@ -15,20 +13,18 @@ class DashboardController extends Controller
 {
     public function getStats()
     {
-        // 1. Menghitung Statistik untuk Stat Cards
+
         $totalUsers = User::count();
         $totalComments = Comment::count();
         $rejectedComments = Comment::where('status', 'rejected')->count();
         $newArticlesThisWeek = News::where('created_at', '>=', now()->subWeek())->count();
 
-        // 2. Menyiapkan Data untuk Chart (Contoh: user baru per hari selama 7 hari terakhir)
         $usersChart = User::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
             ->where('created_at', '>=', now()->subDays(7))
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
 
-        // 3. Menyiapkan Data untuk Chart Komentar
         $commentsChart = Comment::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
             ->where('created_at', '>=', now()->subDays(7))
             ->groupBy('date')

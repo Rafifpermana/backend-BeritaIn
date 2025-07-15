@@ -1,7 +1,5 @@
 <?php
 
-// app/Http/Middleware/IsAdmin.php
-
 namespace App\Http\Middleware;
 
 use Closure;

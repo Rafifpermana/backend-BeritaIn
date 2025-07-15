@@ -1,7 +1,5 @@
 <?php
 
-// app/Models/Article.php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +18,6 @@ class Article extends Model
         'published_at',
     ];
 
-    // Satu artikel bisa memiliki banyak komentar, like, dan bookmark
     public function comments()
     {
         return $this->hasMany(Comment::class);

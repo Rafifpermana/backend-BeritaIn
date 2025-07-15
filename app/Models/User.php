@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // Pastikan ini ada untuk autentikasi
-use Illuminate\Notifications\DatabaseNotification; // Import DatabaseNotification
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\DatabaseNotification;
 
 class User extends Authenticatable
 {
@@ -54,7 +54,6 @@ class User extends Authenticatable
 
     public function bookmarks()
     {
-        // Pastikan relasi ini benar menunjuk ke model Bookmark
         return $this->hasMany(Bookmark::class);
     }
 
@@ -62,7 +61,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Like::class);
     }
-    // Relasi untuk notifikasi database
+
     public function notifications()
     {
         return $this->morphMany(DatabaseNotification::class, 'notifiable')->orderBy('created_at', 'desc');
@@ -71,7 +70,7 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(?string $value): ?string
     {
         return $value
-            ? asset('storage/' . $value)  // => "/storage/avatars/xxxx.jpg"
+            ? asset('storage/' . $value)
             : null;
     }
 }

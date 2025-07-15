@@ -41,7 +41,7 @@ class News extends Model
      */
     public function comments()
     {
-        return $this->hasMany(Comment::class)->whereNull('parent_id'); // Hanya komentar utama
+        return $this->hasMany(Comment::class)->whereNull('parent_id'); 
     }
 
     public function bookmarks()
