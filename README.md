@@ -164,22 +164,38 @@ Bagian ini mendefinisikan URL RSS Feed yang menjadi sumber konten aplikasi.
 RSS_CNN_NAME="CNN Indonesia"
 RSS_CNN_ALL="https://www.cnnindonesia.com/rss"
 RSS_CNN_NASIONAL="https://www.cnnindonesia.com/nasional/rss"
-# ... (dan seterusnya untuk CNN)
+RSS_CNN_INTERNASIONAL="https://www.cnnindonesia.com/internasional/rss"
+RSS_CNN_EKONOMI="https://www.cnnindonesia.com/ekonomi/rss"
+RSS_CNN_OLAHRAGA="https://www.cnnindonesia.com/olahraga/rss"
+RSS_CNN_TEKNOLOGI="https://www.cnnindonesia.com/teknologi/rss"
+RSS_CNN_HIBURAN="https://www.cnnindonesia.com/hiburan/rss"
+RSS_CNN_GAYA_HIDUP="https://www.cnnindonesia.com/gaya-hidup/rss"
 
 # CNBC Indonesia
 RSS_CNBC_NAME="CNBC Indonesia"
 RSS_CNBC_ALL="https://www.cnbcindonesia.com/news/rss"
-# ... (dan seterusnya untuk CNBC)
+RSS_CNBC_MARKET="https://www.cnbcindonesia.com/market/rss"
+RSS_CNBC_INVESTMENT="https://www.cnbcindonesia.com/investment/rss"
+RSS_CNBC_TECH="https://www.cnbcindonesia.com/tech/rss"
+RSS_CNBC_LIFESTYLE="https://www.cnbcindonesia.com/lifestyle/rss"
 
 # Antara News
 RSS_ANTARA_NAME="Antara News"
 RSS_ANTARA_ALL="https://www.antaranews.com/rss/terkini.xml"
-# ... (dan seterusnya untuk Antara)
+RSS_ANTARA_POLITIK="https://www.antaranews.com/rss/politik.xml"
+RSS_ANTARA_HUKUM="https://www.antaranews.com/rss/hukum.xml"
+RSS_ANTARA_EKONOMI="https://www.antaranews.com/rss/ekonomi.xml"
+RSS_ANTARA_OLAHRAGA="https://www.antaranews.com/rss/olahraga.xml"
+RSS_ANTARA_TEKNO="https://www.antaranews.com/rss/tekno.xml"
 
 # Tempo.co
 RSS_TEMPO_NAME="Tempo.co"
 RSS_TEMPO_ALL="https://rss.tempo.co/"
-# ... (dan seterusnya untuk Tempo)
+RSS_TEMPO_NASIONAL="https://rss.tempo.co/nasional"
+RSS_TEMPO_BISNIS="https://rss.tempo.co/bisnis"
+RSS_TEMPO_DUNIA="https://rss.tempo.co/dunia"
+RSS_TEMPO_BOLA="https://rss.tempo.co/bola"
+RSS_TEMPO_TEKNO="https://rss.tempo.co/tekno"
 ```
 
 ### 4\. Migrasi dan Seeding Database
